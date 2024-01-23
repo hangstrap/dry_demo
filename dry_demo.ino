@@ -61,17 +61,15 @@ void setup() {
 }
 
 void loop() {
-    delay(100);
+    delay(1000);
+    displayEnv();
 }
 
 void IntroScreen()
 {
   //Draw the Result Box
   tft.fillRect(0, 0, 240, 320, ILI9341_WHITE);
-  //tft.drawRGBBitmap(20,80, Zihatec_Logo,200,60);
-
-//tft.drawRGBBitmap(20,80, image_data_square,100,100);
-tft.drawRGBBitmap(50,10,image_data_DryLivingLogo,150,158);
+  tft.drawRGBBitmap(50,10,image_data_DryLivingLogo,150,158);
 
   tft.setTextSize(0);
   tft.setTextColor(ILI9341_BLACK);
@@ -112,6 +110,7 @@ void displayEnv(){
   tft.print("Humidity    = ");
   tft.print(humidity);
   tft.println(" %");
+
 
   tft.setCursor(xCursor, yCursor += yIncrement);
   tft.print("Pressure    = ");
