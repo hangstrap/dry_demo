@@ -36,16 +36,17 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 XPT2046_Touchscreen touch(TOUCH_CS);
 
 
+
 class Environment {
   private:
     //returns canvas width
     int displayProperty(  int posY, String name, int value, String units){
-
-      //Font is 17 heigh. Alligns to 12 Y, so add some whitespace of 20
+      //Font is 17 heigh. Alligns to 12 Y, so add some whitespace of 20S
       int canvasHeight = 20;
-      int textY = 14;
       GFXcanvas16 canvas(ILI9341_TFTWIDTH, canvasHeight);
-
+     
+      int textY = 14;
+  
       canvas.fillScreen( ILI9341_ORANGE );
       canvas.setTextColor(ILI9341_RED);
       canvas.setFont( &FreeSansBold9pt7b);  
@@ -54,16 +55,14 @@ class Environment {
       int16_t  x1, y1;
       uint16_t w, h;
       canvas.getTextBounds(name, 0, 0, &x1, &y1, &w, &h);
-      Serial.print(name); Serial.print( " x=" );Serial.print( x1); Serial.print( " y="); Serial.print( y1);Serial.print( " w="); Serial.print( w);Serial.print( " h=");Serial.println( h);
-
-      canvas.setCursor(0, textY);
+ //     Serial.print(name); Serial.print( " x=" );Serial.print( x1); Serial.print( " y="); Serial.print( y1);Serial.print( " w="); Serial.print( w);Serial.print( " h=");Serial.println( h);
+      canvas.setCursor(canvas.width()/2 - w, textY);
       canvas.print( name);
       canvas.setCursor( canvas.width() / 2, textY);
-      canvas.print( "= ");
+      canvas.print( " = ");
       canvas.print( value);
       canvas.print( units);
       tft.drawRGBBitmap( 0, posY, canvas.getBuffer(), canvas.width(), canvas.height());
-      delay(1000);
       return canvasHeight;
     }
 
@@ -92,7 +91,13 @@ class Environment {
     int display(int posY ){      
       posY += displayProperty( posY, "Temperature", temperature, "C");
       posY += displayProperty( posY, "Humidity", humidity, "%");
-      posY += displayProperty( posY, "Pressure", pressure, "Pa");
+      posY += displayProperty( posY, "Pressure", pressure*10, "hPa");
+      int time = millis() / 1000;
+      if( time > 60){
+        posY += displayProperty(posY, "Up time", time/60, " minutes");
+      }else{
+        posY += displayProperty(posY, "Up time", time, " seconds");
+      }
       return posY;
     }
 
@@ -123,9 +128,8 @@ void setup() {
   IntroScreen();
   digitalWrite(TFT_LED, LOW);    // LOW to turn backlight on; 
 
-  Serial.println( "setup return wait");
   delay(1000);
-  Serial.println( "setup() return");
+
 }
 
 void loop() {
@@ -133,7 +137,7 @@ void loop() {
     if( !lastReading.equal( currentValue)){
       lastReading = currentValue;
       printEnv(lastReading);
-      lastReading.display( ILI9341_TFTHEIGHT - 60);
+      lastReading.display( ILI9341_TFTHEIGHT - 80);
     }
 }
 
