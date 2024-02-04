@@ -34,7 +34,39 @@
 
 Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 XPT2046_Touchscreen touch(TOUCH_CS);
+
+
 class Environment {
+  private:
+    //returns canvas width
+    int displayProperty(  int posY, String name, int value, String units){
+
+      //Font is 17 heigh. Alligns to 12 Y, so add some whitespace of 20
+      int canvasHeight = 20;
+      int textY = 14;
+      GFXcanvas16 canvas(ILI9341_TFTWIDTH, canvasHeight);
+
+      canvas.fillScreen( ILI9341_ORANGE );
+      canvas.setTextColor(ILI9341_RED);
+      canvas.setFont( &FreeSansBold9pt7b);  
+      canvas.setTextWrap(false);
+
+      int16_t  x1, y1;
+      uint16_t w, h;
+      canvas.getTextBounds(name, 0, 0, &x1, &y1, &w, &h);
+      Serial.print(name); Serial.print( " x=" );Serial.print( x1); Serial.print( " y="); Serial.print( y1);Serial.print( " w="); Serial.print( w);Serial.print( " h=");Serial.println( h);
+
+      canvas.setCursor(0, textY);
+      canvas.print( name);
+      canvas.setCursor( canvas.width() / 2, textY);
+      canvas.print( "= ");
+      canvas.print( value);
+      canvas.print( units);
+      tft.drawRGBBitmap( 0, posY, canvas.getBuffer(), canvas.width(), canvas.height());
+      delay(1000);
+      return canvasHeight;
+    }
+
   public:
     int temperature =0;
     int humidity = 0;
@@ -56,18 +88,29 @@ class Environment {
       }
       return true;
     }
+    //Return final posY;
+    int display(int posY ){      
+      posY += displayProperty( posY, "Temperature", temperature, "C");
+      posY += displayProperty( posY, "Humidity", humidity, "%");
+      posY += displayProperty( posY, "Pressure", pressure, "Pa");
+      return posY;
+    }
+
 } ;
 
 Environment lastReading(0,0,0);
 
+
 void setup() {
   Serial.begin(115200); //Use serial monitor for debugging
   delay(1000);
+  Serial.println( "Running Dry_demo");
 
   if (!ENV.begin()) {
     Serial.println("Failed to initialize MKR ENV Shield!");
     while (1);
   }
+  Serial.println( "Initilised MRK ENV");
 
   pinMode(TFT_LED, OUTPUT); // define as output for backlight control
 
@@ -78,20 +121,19 @@ void setup() {
   tft.fillScreen(ILI9341_BLACK);
   
   IntroScreen();
-
-  lastReading = readCurrentValue();
-  displayEnv( lastReading);
   digitalWrite(TFT_LED, LOW);    // LOW to turn backlight on; 
 
-
+  Serial.println( "setup return wait");
+  delay(1000);
+  Serial.println( "setup() return");
 }
 
 void loop() {
-    delay(1000);
     Environment currentValue = readCurrentValue();
     if( !lastReading.equal( currentValue)){
       lastReading = currentValue;
-      displayEnv( lastReading);
+      printEnv(lastReading);
+      lastReading.display( ILI9341_TFTHEIGHT - 60);
     }
 }
 
@@ -108,6 +150,7 @@ void IntroScreen()
   tft.setCursor(42, 190);
   tft.println("Humidity Controller");  
 
+  Serial.println("Done Intro screen");
 }
 
 Environment readCurrentValue(){
@@ -127,33 +170,4 @@ void printEnv( Environment environment){
   Serial.print( environment.pressure);
   Serial.println(" kPa");
 }
-
-void displayEnv( Environment environment){
-
-  int xCursor = 10;
-  int yCursor = 250;
-  int yIncrement = 25;
-
-  tft.fillRect(0, yCursor -14, ILI9341_TFTWIDTH, ILI9341_TFTHEIGHT-yCursor, ILI9341_ORANGE);
-
-  tft.setTextColor(ILI9341_RED);
-
-  tft.setCursor(xCursor, yCursor);
-  tft.print("Temperature = ");
-  tft.print( environment.temperature);
-  tft.println(" °C");
-  
-  tft.setCursor(xCursor, yCursor += yIncrement);
-  tft.print("Humidity    = ");
-  tft.print( environment.humidity);
-  tft.println(" %");
-
-
-  tft.setCursor(xCursor, yCursor += yIncrement);
-  tft.print("Pressure    = ");
-  tft.print( environment.pressure);
-  tft.println(" kPa");
-
-}
-
 
